@@ -3,6 +3,7 @@ let detector;
 let isDancing = false;
 let totalScore = 0;
 let smoothMatchRate = 0; 
+let isCameraMirrored = false; // 🎯 新增：摄像头手动镜像状态
 
 // 🌟 核心参数设置 (🔥 变态级严格)
 const TIME_WINDOW_MS = 80;  
@@ -13,7 +14,7 @@ const SMOOTH_ALPHA = 0.75;
 let lastVideoKeypoints = null;
 let lastCamKeypoints = null;
 
-// 🎯 新增：区间平均分判定系统
+// 🎯 区间平均分判定系统
 const EVALUATION_INTERVAL_MS = 500; // 判定区间：每 0.5 秒结算一次
 let intervalStartTime = 0;
 let intervalScoreSum = 0;
@@ -42,6 +43,28 @@ function injectStyles() {
             background: #000;
             box-shadow: 0 4px 12px rgba(0,0,0,0.8);
             display: none;
+        }
+        
+        /* 🎯 新增：镜像开关按钮样式 */
+        #btn-mirror-cam {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 100000;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: 1px solid #fb7299;
+            padding: 4px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        #btn-mirror-cam:hover { background: #fb7299; }
+        #btn-mirror-cam.active {
+            background: #fb7299;
+            color: white;
+            box-shadow: 0 0 8px #fb7299;
         }
         
         /* 左下角：视频角色骨骼提取 */
@@ -169,12 +192,29 @@ function initUI() {
             container.id = 'dance-cam-container';
             container.innerHTML = `
                 <div id="dance-score-ui"><span id="current-score">0</span></div>
+                <button id="btn-mirror-cam">镜像：关</button>
                 <video id="dance-video" autoplay playsinline></video>
                 <canvas id="dance-canvas"></canvas>
             `;
             playerContainer.appendChild(container); 
 
-            // 左下角容器：视频提取出来的角色骨骼
+            // 🎯 新增：镜像按钮点击逻辑
+            const mirrorBtn = document.getElementById('btn-mirror-cam');
+            mirrorBtn.onclick = () => {
+                isCameraMirrored = !isCameraMirrored;
+                camVideoElement = document.getElementById('dance-video'); 
+                if (isCameraMirrored) {
+                    mirrorBtn.innerText = '镜像：开';
+                    mirrorBtn.classList.add('active');
+                    camVideoElement.style.transform = 'scaleX(-1)'; // 视觉翻转
+                } else {
+                    mirrorBtn.innerText = '镜像：关';
+                    mirrorBtn.classList.remove('active');
+                    camVideoElement.style.transform = 'scaleX(1)';  // 恢复正常
+                }
+            };
+
+            // 左下角容器：视频角色骨骼提取
             const videoSkeletonContainer = document.createElement('div');
             videoSkeletonContainer.id = 'video-skeleton-container';
             videoSkeletonContainer.innerHTML = `
@@ -284,7 +324,7 @@ async function toggleDanceMode() {
     
     if (isDancing) {
         isDancing = false;
-        btn.innerText = '💃 一起跳';
+        btn.innerText = '一起跳';
         btn.style.backgroundColor = '#fb7299';
         document.getElementById('dance-cam-container').style.display = 'none';
         document.getElementById('video-skeleton-container').style.display = 'none'; // 隐藏视频骨架
@@ -349,7 +389,7 @@ function onVideoEnded() {
     if (!isDancing) return;
     
     const btn = document.querySelector('.btn-dance-together');
-    btn.innerText = '💃 一起跳';
+    btn.innerText = '一起跳';
     btn.style.backgroundColor = '#fb7299';
     
     isDancing = false;
@@ -402,13 +442,18 @@ async function detectPoseLoop() {
             let rawVideoPose = mirrorPoseData(videoPoses[0], bVideoElement.videoWidth);
             let rawCamPose = camPoses[0];
 
+            // 🎯 新增：如果开启了镜像，则将玩家骨骼数据也进行镜像映射
+            if (isCameraMirrored) {
+                rawCamPose = mirrorPoseData(rawCamPose, camVideoElement.videoWidth);
+            }
+
             rawVideoPose.keypoints = smoothKeypoints(rawVideoPose.keypoints, lastVideoKeypoints);
             rawCamPose.keypoints = smoothKeypoints(rawCamPose.keypoints, lastCamKeypoints);
             
             lastVideoKeypoints = rawVideoPose.keypoints;
             lastCamKeypoints = rawCamPose.keypoints;
 
-            // 视频骨骼绘制在左下角青框中 (原版参数)
+            // 视频骨骼绘制在左下角青框中
             drawSkeleton(biliCtx, biliCanvas, rawVideoPose.keypoints, '#00ffff');
             // 玩家骨骼绘制在右下角粉框中
             drawSkeleton(ctx, canvasElement, rawCamPose.keypoints, '#fb7299');
@@ -526,7 +571,7 @@ function drawSkeleton(ctx, canvas, keypoints, color) {
     ];
 
     ctx.strokeStyle = color;
-    // 线条粗细根据画布大小稍微放大一点，因为目前是塞在小框里
+    // 线条粗细根据画布大小稍微放大一点
     ctx.lineWidth = canvas.width > 1000 ? 8 : 4; 
     ctx.lineCap = "round";
     
