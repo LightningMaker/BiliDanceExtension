@@ -1,0 +1,90 @@
+/* 🌟 摄像头和画布容器 */
+#dance-cam-container {
+    position: absolute; /* 关键：改为absolute，使其相对于B站播放器定位，全屏时不会掉层 */
+    bottom: 80px;       /* 稍微抬高一点，避开全屏时的播放进度条 */
+    right: 30px;
+    width: 320px;
+    height: 240px;
+    z-index: 99999;
+    border: 3px solid #fb7299;
+    border-radius: 12px;
+    background: #000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.8);
+    display: none;
+}
+
+#dance-video, #dance-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 10px;
+}
+
+/* 🌟 超大得分UI */
+#dance-score-ui {
+    position: absolute;
+    top: -90px;
+    left: -50%;      /* 扩展两边空间，防止大字换行 */
+    width: 200%;
+    text-align: center;
+    color: #fff;
+    font-size: 56px; /* ✨ 得分字体加大 */
+    font-weight: 900;
+    text-shadow: 3px 3px 6px #000, 0 0 15px #fb7299;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+/* ✨ 匹配率单独放大 */
+.match-rate-text {
+    font-size: 40px;
+    font-weight: bold;
+}
+
+/* B站原视频上覆盖的透明骨骼画布 */
+#bili-video-canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; 
+    z-index: 100;
+}
+
+/* 结算画面 */
+#dance-result-screen {
+    position: absolute; /* 改为 absolute */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.9);
+    padding: 40px;
+    border-radius: 20px;
+    color: #fb7299;
+    font-size: 40px;
+    z-index: 100000;
+    text-align: center;
+    display: none;
+}
+
+#btn-close-result {
+    margin-top: 20px;
+    font-size: 24px;
+    padding: 10px 30px;
+    cursor: pointer;
+}
+
+.btn-dance-together {
+    background-color: #fb7299;
+    color: white;
+    padding: 5px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-left: 10px;
+    font-weight: bold;
+    border: none;
+}
+.btn-dance-together:hover { background-color: #ff85a2; }

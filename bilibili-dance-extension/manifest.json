@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "B站一起跳",
+  "version": "1.0",
+  "description": "本地模型版：在B站舞蹈区使用AI实时比对动作",
+  "host_permissions": [
+    "*://*.bilibili.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://*.bilibili.com/video/*"],
+      "js": ["get-url.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["*://*.bilibili.com/video/*"],
+      "js": [
+        "tf.min.js", 
+        "pose-detection.js", 
+        "content.js"
+      ],
+      "css": ["style.css"],
+      "run_at": "document_idle",
+      "world": "MAIN" 
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["model/*"],
+      "matches": ["*://*.bilibili.com/*"]
+    }
+  ]
+}
