@@ -3,7 +3,7 @@ let detector;
 let isDancing = false;
 let totalScore = 0;
 let smoothMatchRate = 0; 
-let isCameraMirrored = false; // 🎯 新增：摄像头手动镜像状态
+let isCameraMirrored = false; // 🎯 摄像头手动镜像状态
 
 // 🌟 核心参数设置 (🔥 变态级严格)
 const TIME_WINDOW_MS = 80;  
@@ -45,7 +45,7 @@ function injectStyles() {
             display: none;
         }
         
-        /* 🎯 新增：镜像开关按钮样式 */
+        /* 镜像开关按钮样式 */
         #btn-mirror-cam {
             position: absolute;
             top: 10px;
@@ -104,7 +104,7 @@ function injectStyles() {
             pointer-events: none;
         }
         
-        /* 🎯 EXCELLENT / GREAT 弹字动画 */
+        /* EXCELLENT / GREAT 弹字动画 */
         @keyframes popFade {
             0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
             20% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
@@ -166,6 +166,7 @@ function injectStyles() {
             border: none;
             box-shadow: 0 6px 16px rgba(251, 114, 153, 0.5);
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            display: none; /* 🎯 默认隐藏，只有舞蹈区才显示 */
         }
         .btn-dance-together:hover { 
             background-color: #ff85a2; 
@@ -198,7 +199,7 @@ function initUI() {
             `;
             playerContainer.appendChild(container); 
 
-            // 🎯 新增：镜像按钮点击逻辑
+            // 镜像按钮点击逻辑
             const mirrorBtn = document.getElementById('btn-mirror-cam');
             mirrorBtn.onclick = () => {
                 isCameraMirrored = !isCameraMirrored;
@@ -256,11 +257,84 @@ function initUI() {
                     toggleDanceMode();
                 }
             });
+
+            // 🎯 启动分区监控
+            startZoneMonitor();
         }
     }, 1000);
 }
 
-// 🎯 弹出评价文字
+// 🎯 增强版：检测当前视频是否属于舞蹈区
+function checkIsDanceVideo() {
+    // 如果不在视频播放页（比如首页），直接返回 false
+    if (!window.location.href.includes('/video/')) return false;
+
+    let isDance = false;
+
+    // 1. 扫描网页中的面包屑导航和标签（兼容 B 站新旧版 UI）
+    const selectors = [
+        '.video-info-detail-list a', // 新版标题下方的分类面包屑
+        '.tit-tr-1 a',               // 老版分类面包屑
+        '.tag-link',                 // 视频下方的用户标签 (Tag)
+        'a[href*="/v/dance/"]',      // 链接中直接包含舞蹈区路由
+        'a[href*="tid=129"]',        // 链接包含舞蹈区主分类ID
+        'a[href*="tid=20"]',         // 宅舞分类ID
+        'a[href*="tid=198"]',        // 街舞分类ID
+        'a[href*="tid=154"]'         // 舞蹈综合分类ID
+    ];
+
+    try {
+        for (let selector of selectors) {
+            const elements = document.querySelectorAll(selector);
+            for (let el of elements) {
+                const text = el.innerText || '';
+                const href = el.href || '';
+                
+                // 只要分类名称或标签里带“舞”，或者是跳舞游戏(舞力全开)，或者是直接指向舞蹈区的链接
+                if (text.includes('舞')) {
+                    isDance = true;
+                    break; // 只要找到一个特征，就认定为舞蹈相关，跳出循环
+                }
+            }
+            if (isDance) break;
+        }
+
+        // 2. 兜底策略：如果刚才刚刷新页面，DOM还没渲染完，读取全局变量
+        if (!isDance && window.__INITIAL_STATE__ && window.__INITIAL_STATE__.videoData) {
+            const tname = window.__INITIAL_STATE__.videoData.tname || '';
+            if (tname.includes('舞')) {
+                isDance = true;
+            }
+        }
+    } catch (e) {
+        console.warn("舞蹈区检测出错:", e);
+    }
+
+    return isDance;
+}
+
+// 🎯 动态控制按钮显示与隐藏（适配B站无刷新页面跳转）
+function startZoneMonitor() {
+    setInterval(() => {
+        const btn = document.querySelector('.btn-dance-together');
+        if (!btn) return;
+
+        // 如果正在跳舞中，绝对不要隐藏按钮
+        if (isDancing) {
+            btn.style.display = 'block';
+            return;
+        }
+
+        // 检测是否在舞蹈区
+        if (checkIsDanceVideo()) {
+            btn.style.display = 'block';
+        } else {
+            btn.style.display = 'none';
+        }
+    }, 1500); // 每1.5秒检查一次
+}
+
+// 弹出评价文字
 function spawnComboText(type) {
     const playerContainer = document.querySelector('.bpx-player-container');
     if (!playerContainer) return;
@@ -349,14 +423,14 @@ async function toggleDanceMode() {
     // 显示左下角的视频骨骼容器
     document.getElementById('video-skeleton-container').style.display = 'block';
 
-    // 动态计算宽高比，防止左下角和右下角的画面被拉伸变形
+    // 动态计算宽高比
     const videoRatio = (bVideoElement.videoHeight || 1080) / (bVideoElement.videoWidth || 1920);
     document.getElementById('video-skeleton-container').style.height = (320 * videoRatio) + 'px';
 
     const camRatio = (camVideoElement.videoHeight || 480) / (camVideoElement.videoWidth || 640);
     document.getElementById('dance-cam-container').style.height = (320 * camRatio) + 'px';
 
-    // 设置画板的内在分辨率为真实的视频分辨率
+    // 设置画板内在分辨率
     canvasElement.width = camVideoElement.videoWidth;
     canvasElement.height = camVideoElement.videoHeight;
     biliCanvas.width = bVideoElement.videoWidth;
@@ -369,7 +443,6 @@ async function toggleDanceMode() {
     totalScore = 0;
     smoothMatchRate = 0;
     
-    // 重置区间计算器
     intervalStartTime = performance.now();
     intervalScoreSum = 0;
     intervalFrameCount = 0;
@@ -394,7 +467,7 @@ function onVideoEnded() {
     
     isDancing = false;
     document.getElementById('dance-cam-container').style.display = 'none';
-    document.getElementById('video-skeleton-container').style.display = 'none'; // 隐藏视频骨架
+    document.getElementById('video-skeleton-container').style.display = 'none'; 
     bVideoElement.style.transform = 'scaleX(1)'; 
     biliCtx.clearRect(0, 0, biliCanvas.width, biliCanvas.height);
     
@@ -442,7 +515,6 @@ async function detectPoseLoop() {
             let rawVideoPose = mirrorPoseData(videoPoses[0], bVideoElement.videoWidth);
             let rawCamPose = camPoses[0];
 
-            // 🎯 新增：如果开启了镜像，则将玩家骨骼数据也进行镜像映射
             if (isCameraMirrored) {
                 rawCamPose = mirrorPoseData(rawCamPose, camVideoElement.videoWidth);
             }
@@ -453,9 +525,7 @@ async function detectPoseLoop() {
             lastVideoKeypoints = rawVideoPose.keypoints;
             lastCamKeypoints = rawCamPose.keypoints;
 
-            // 视频骨骼绘制在左下角青框中
             drawSkeleton(biliCtx, biliCanvas, rawVideoPose.keypoints, '#00ffff');
-            // 玩家骨骼绘制在右下角粉框中
             drawSkeleton(ctx, canvasElement, rawCamPose.keypoints, '#fb7299');
 
             videoPoseBuffer.push({ pose: rawVideoPose, time: now });
@@ -477,29 +547,24 @@ async function detectPoseLoop() {
             smoothMatchRate = (smoothMatchRate * 0.7) + (maxMatchRate * 0.3);
             const displayRate = maxMatchRate === 0 ? 0 : smoothMatchRate; 
 
-            // 🎯 区间平均分统计逻辑
             intervalScoreSum += displayRate;
             intervalFrameCount++;
 
-            // 🎯 每 0.5 秒结算一次评价并加分 (代替实时加分)
             if (now - intervalStartTime >= EVALUATION_INTERVAL_MS) {
                 if (intervalFrameCount > 0) {
                     let averageRate = intervalScoreSum / intervalFrameCount;
                     
                     if (averageRate >= 85) { 
                         spawnComboText('excellent');
-                        totalScore += 100; // Excellent 获得 100 分
+                        totalScore += 100; 
                     } else if (averageRate >= 70) {
                         spawnComboText('great');
-                        totalScore += 50;  // Great 获得 50 分
+                        totalScore += 50;  
                     }
-                    // 小于 70 视为 MISS，不加分，也不弹评价
 
-                    // 统一更新一次得分 UI
                     document.getElementById('current-score').innerText = totalScore;
                 }
                 
-                // 结算完毕，重置数据，进入下一判定区间
                 intervalStartTime = now;
                 intervalScoreSum = 0;
                 intervalFrameCount = 0;
@@ -512,13 +577,13 @@ async function detectPoseLoop() {
     requestAnimationFrame(detectPoseLoop);
 }
 
-// 🔥 变态严格版判定算法 (不仅看动作，还严抓角度)
+// 🔥 变态严格版判定算法 
 function calculateSimilarity(videoKp, camKp) {
     let totalScore = 0;
     let totalMaxWeight = 0; 
 
     const segments = [
-        { v1: 5, v2: 6, c1: 5, c2: 6, weight: 0 },     // 肩膀 (设为0是为了过滤极微小的抖动误判)
+        { v1: 5, v2: 6, c1: 5, c2: 6, weight: 0 },     // 肩膀 
         { v1: 11, v2: 12, c1: 11, c2: 12, weight: 0 }, // 胯部
         { v1: 5, v2: 7, c1: 5, c2: 7, weight: 2 },   // 左大臂
         { v1: 7, v2: 9, c1: 7, c2: 9, weight: 2 },   // 左小臂
@@ -533,7 +598,7 @@ function calculateSimilarity(videoKp, camKp) {
     function getAngle(p1, p2) { return Math.atan2(p2.y - p1.y, p2.x - p1.x); }
 
     segments.forEach(seg => {
-        if (seg.weight === 0) return; // 权重为0的部位跳过计算
+        if (seg.weight === 0) return; 
 
         const vPt1 = videoKp[seg.v1], vPt2 = videoKp[seg.v2];
         const cPt1 = camKp[seg.c1], cPt2 = camKp[seg.c2];
@@ -545,7 +610,6 @@ function calculateSimilarity(videoKp, camKp) {
                 let diff = Math.abs((getAngle(vPt1, vPt2) - getAngle(cPt1, cPt2)) * 180 / Math.PI);
                 if (diff > 180) diff = 360 - diff; 
                 
-                // 8度以内满分，超出部分急剧衰减，大于 28度 直接 0分
                 let matchPercentage = Math.max(0, 100 - (Math.max(0, diff - 8) / 20 * 100));
                 totalScore += (matchPercentage * seg.weight);
             }
@@ -571,7 +635,6 @@ function drawSkeleton(ctx, canvas, keypoints, color) {
     ];
 
     ctx.strokeStyle = color;
-    // 线条粗细根据画布大小稍微放大一点
     ctx.lineWidth = canvas.width > 1000 ? 8 : 4; 
     ctx.lineCap = "round";
     
