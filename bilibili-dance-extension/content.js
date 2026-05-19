@@ -132,25 +132,95 @@ function injectStyles() {
             position: absolute;
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
-            padding: 40px;
+            background: rgba(0,0,0,0.92);
+            padding: 40px 60px;
             border-radius: 20px;
-            color: #fb7299;
-            font-size: 40px;
+            color: #fff;
             z-index: 100000;
             text-align: center;
             display: none;
+            min-width: 400px;
+            border: 2px solid #fb7299;
+            box-shadow: 0 0 40px rgba(251, 114, 153, 0.4);
         }
+        
+        /* 缩小“舞蹈结束！”标题 */
+        #dance-result-screen h1 {
+            font-size: 26px;
+            margin: 0 0 20px 0;
+            color: #eee;
+            font-weight: normal;
+        }
+        
+        /* 缩小“本次得分:”的提示文字 */
+        #dance-result-screen p:nth-of-type(1) {
+            font-size: 18px;
+            margin: 0;
+            color: #ddd;
+        }
+        
+        /* 🚀 极其突出的超大“本次得分”数字 */
+        #final-score {
+            display: block; /* 独立成行 */
+            font-size: 90px;
+            font-weight: 900;
+            color: #fb7299;
+            text-shadow: 3px 3px 0 #000, 0 0 25px rgba(251, 114, 153, 0.8);
+            margin: 5px 0 15px 0;
+            line-height: 1;
+        }
+        
+        /* 缩小“历史最高”整行 */
+        #dance-result-screen p:nth-of-type(2) {
+            font-size: 18px;
+            margin: 15px 0;
+            color: #999;
+        }
+        #high-score {
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        #score-diff-text {
+            margin-top: 25px;
+            font-weight: 900;
+        }
+        
+        /* 缩小破纪录与未破纪录的提示文字 */
+        .new-record {
+            color: #00ffcc !important;
+            text-shadow: 0 0 15px #00ffcc;
+            font-size: 26px !important;
+            animation: pulse 1s infinite alternate;
+        }
+        .normal-diff {
+            color: #aaa !important;
+            font-size: 18px !important;
+        }
+        
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.08); }
+        }
+
         #btn-close-result {
-            margin-top: 20px;
-            font-size: 24px;
-            padding: 10px 30px;
+            margin-top: 30px;
+            font-size: 20px;
+            padding: 10px 50px;
             cursor: pointer;
-            border-radius: 8px;
+            border-radius: 50px;
             border: none;
             background: #fb7299;
             color: white;
+            font-weight: bold;
+            transition: 0.3s;
         }
+        #btn-close-result:hover { 
+            background: #ff85a2; 
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #fb7299;
+        }
+
         .btn-dance-together {
             position: fixed;
             bottom: 30px;
@@ -166,7 +236,7 @@ function injectStyles() {
             border: none;
             box-shadow: 0 6px 16px rgba(251, 114, 153, 0.5);
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            display: none; /* 🎯 默认隐藏，只有舞蹈区才显示 */
+            display: none; 
         }
         .btn-dance-together:hover { 
             background-color: #ff85a2; 
@@ -223,11 +293,14 @@ function initUI() {
             `;
             playerContainer.appendChild(videoSkeletonContainer); 
 
+            // 新版带历史最高分的结算面板
             const resultScreen = document.createElement('div');
             resultScreen.id = 'dance-result-screen';
             resultScreen.innerHTML = `
-                <h1>舞蹈结束！</h1>
-                <p>你的总分: <span id="final-score">0</span></p>
+                <h1>舞蹈结束</h1>
+                <p>本次得分: <span id="final-score">0</span></p>
+                <p>历史最高: <span id="high-score">0</span></p>
+                <div id="score-diff-text"></div>
                 <button id="btn-close-result">关闭</button>
             `;
             playerContainer.appendChild(resultScreen); 
@@ -264,23 +337,20 @@ function initUI() {
     }, 1000);
 }
 
-// 🎯 增强版：检测当前视频是否属于舞蹈区
+// 🎯 检测当前视频是否属于舞蹈区
 function checkIsDanceVideo() {
-    // 如果不在视频播放页（比如首页），直接返回 false
     if (!window.location.href.includes('/video/')) return false;
 
     let isDance = false;
-
-    // 1. 扫描网页中的面包屑导航和标签（兼容 B 站新旧版 UI）
     const selectors = [
-        '.video-info-detail-list a', // 新版标题下方的分类面包屑
-        '.tit-tr-1 a',               // 老版分类面包屑
-        '.tag-link',                 // 视频下方的用户标签 (Tag)
-        'a[href*="/v/dance/"]',      // 链接中直接包含舞蹈区路由
-        'a[href*="tid=129"]',        // 链接包含舞蹈区主分类ID
-        'a[href*="tid=20"]',         // 宅舞分类ID
-        'a[href*="tid=198"]',        // 街舞分类ID
-        'a[href*="tid=154"]'         // 舞蹈综合分类ID
+        '.video-info-detail-list a', 
+        '.tit-tr-1 a',               
+        '.tag-link',                 
+        'a[href*="/v/dance/"]',      
+        'a[href*="tid=129"]',        
+        'a[href*="tid=20"]',         
+        'a[href*="tid=198"]',        
+        'a[href*="tid=154"]'         
     ];
 
     try {
@@ -288,18 +358,14 @@ function checkIsDanceVideo() {
             const elements = document.querySelectorAll(selector);
             for (let el of elements) {
                 const text = el.innerText || '';
-                const href = el.href || '';
-                
-                // 只要分类名称或标签里带“舞”，或者是跳舞游戏(舞力全开)，或者是直接指向舞蹈区的链接
                 if (text.includes('舞')) {
                     isDance = true;
-                    break; // 只要找到一个特征，就认定为舞蹈相关，跳出循环
+                    break;
                 }
             }
             if (isDance) break;
         }
 
-        // 2. 兜底策略：如果刚才刚刷新页面，DOM还没渲染完，读取全局变量
         if (!isDance && window.__INITIAL_STATE__ && window.__INITIAL_STATE__.videoData) {
             const tname = window.__INITIAL_STATE__.videoData.tname || '';
             if (tname.includes('舞')) {
@@ -313,25 +379,21 @@ function checkIsDanceVideo() {
     return isDance;
 }
 
-// 🎯 动态控制按钮显示与隐藏（适配B站无刷新页面跳转）
+// 🎯 动态控制按钮显示与隐藏
 function startZoneMonitor() {
     setInterval(() => {
         const btn = document.querySelector('.btn-dance-together');
         if (!btn) return;
-
-        // 如果正在跳舞中，绝对不要隐藏按钮
         if (isDancing) {
             btn.style.display = 'block';
             return;
         }
-
-        // 检测是否在舞蹈区
         if (checkIsDanceVideo()) {
             btn.style.display = 'block';
         } else {
             btn.style.display = 'none';
         }
-    }, 1500); // 每1.5秒检查一次
+    }, 1500); 
 }
 
 // 弹出评价文字
@@ -344,8 +406,6 @@ function spawnComboText(type) {
     textEl.innerText = type === 'excellent' ? 'EXCELLENT' : 'GREAT';
 
     playerContainer.appendChild(textEl);
-
-    // 动画结束后清理DOM
     setTimeout(() => {
         if (textEl.parentNode) textEl.parentNode.removeChild(textEl);
     }, 850); 
@@ -393,17 +453,82 @@ async function startCamera() {
 // 3. 游戏控制逻辑
 // ==========================================
 
+// === 新增：统一的结束游戏与结算逻辑 ===
+function stopDancingAndShowResult() {
+    if (!isDancing) return;
+    
+    isDancing = false;
+    
+    // 1. 恢复按钮状态
+    const btn = document.querySelector('.btn-dance-together');
+    if (btn) {
+        btn.innerText = '一起跳';
+        btn.style.backgroundColor = '#fb7299';
+    }
+    
+    // 2. 隐藏游戏画布与骨架容器
+    const camContainer = document.getElementById('dance-cam-container');
+    const videoSkeleton = document.getElementById('video-skeleton-container');
+    if (camContainer) camContainer.style.display = 'none';
+    if (videoSkeleton) videoSkeleton.style.display = 'none'; 
+    
+    // 3. 恢复原视频画布镜像与清理
+    if (bVideoElement) bVideoElement.style.transform = 'scaleX(1)'; 
+    if (biliCtx && biliCanvas) biliCtx.clearRect(0, 0, biliCanvas.width, biliCanvas.height);
+    
+    // === 🏆 历史最高分结算逻辑 ===
+    // 改进：兼容正则匹配 BV号、AV号 和 番剧 EP号
+    const idMatch = window.location.pathname.match(/(BV\w+|av\d+|ep\d+)/i);
+    const videoId = idMatch ? idMatch[0] : 'global_dance'; 
+    const storageKey = `bili_dance_highscore_${videoId}`;
+    
+    // 从本地读取历史最高分，没有则默认为 0
+    let prevHighScore = parseInt(localStorage.getItem(storageKey)) || 0;
+    
+    const finalScoreEl = document.getElementById('final-score');
+    const highScoreEl = document.getElementById('high-score');
+    const diffTextEl = document.getElementById('score-diff-text');
+    const resultScreen = document.getElementById('dance-result-screen');
+    
+    if (finalScoreEl && highScoreEl && diffTextEl && resultScreen) {
+        finalScoreEl.innerText = totalScore;
+        
+        // 对比分数并更新 UI
+        if (totalScore > prevHighScore) {
+            // 🎉 打破记录
+            let diff = totalScore - prevHighScore;
+            highScoreEl.innerText = totalScore; 
+            
+            if (prevHighScore === 0) {
+                diffTextEl.innerHTML = `🎉 初次游玩此歌曲 🎉`;
+            } else {
+                diffTextEl.innerHTML = `🎉 新纪录！+ ${diff} 分 🎉`;
+            }
+            diffTextEl.className = 'new-record';
+            
+            // 保存新分数到本地
+            localStorage.setItem(storageKey, totalScore.toString());
+        } else {
+            // 📉 未打破记录
+            let diff = prevHighScore - totalScore;
+            highScoreEl.innerText = prevHighScore; 
+            
+            diffTextEl.innerHTML = `距离最高纪录还差 ${diff} 分`;
+            diffTextEl.className = 'normal-diff';
+        }
+        
+        // 显示结算画面
+        resultScreen.style.display = 'block';
+    }
+}
+
 async function toggleDanceMode() {
     const btn = document.querySelector('.btn-dance-together');
     
+    // 如果已经在跳舞被点击，则执行统一的【停止并结算】逻辑
     if (isDancing) {
-        isDancing = false;
-        btn.innerText = '一起跳';
-        btn.style.backgroundColor = '#fb7299';
-        document.getElementById('dance-cam-container').style.display = 'none';
-        document.getElementById('video-skeleton-container').style.display = 'none'; // 隐藏视频骨架
-        bVideoElement.style.transform = 'scaleX(1)'; 
-        biliCtx.clearRect(0, 0, biliCanvas.width, biliCanvas.height);
+        stopDancingAndShowResult();
+        // 手动退出时退出全屏，结算面板会平滑回落到网页原始播放器上显示
         if (document.fullscreenElement) document.exitFullscreen(); 
         return;
     }
@@ -420,17 +545,14 @@ async function toggleDanceMode() {
     btn.innerText = '⏹ 停止跳舞';
     btn.style.backgroundColor = '#ff3333';
     
-    // 显示左下角的视频骨骼容器
     document.getElementById('video-skeleton-container').style.display = 'block';
 
-    // 动态计算宽高比
     const videoRatio = (bVideoElement.videoHeight || 1080) / (bVideoElement.videoWidth || 1920);
     document.getElementById('video-skeleton-container').style.height = (320 * videoRatio) + 'px';
 
     const camRatio = (camVideoElement.videoHeight || 480) / (camVideoElement.videoWidth || 640);
     document.getElementById('dance-cam-container').style.height = (320 * camRatio) + 'px';
 
-    // 设置画板内在分辨率
     canvasElement.width = camVideoElement.videoWidth;
     canvasElement.height = camVideoElement.videoHeight;
     biliCanvas.width = bVideoElement.videoWidth;
@@ -459,20 +581,8 @@ async function toggleDanceMode() {
 }
 
 function onVideoEnded() {
-    if (!isDancing) return;
-    
-    const btn = document.querySelector('.btn-dance-together');
-    btn.innerText = '一起跳';
-    btn.style.backgroundColor = '#fb7299';
-    
-    isDancing = false;
-    document.getElementById('dance-cam-container').style.display = 'none';
-    document.getElementById('video-skeleton-container').style.display = 'none'; 
-    bVideoElement.style.transform = 'scaleX(1)'; 
-    biliCtx.clearRect(0, 0, biliCanvas.width, biliCanvas.height);
-    
-    document.getElementById('final-score').innerText = totalScore;
-    document.getElementById('dance-result-screen').style.display = 'block';
+    // 视频正常播放结束时，同样调用统一的【停止并结算】逻辑
+    stopDancingAndShowResult();
 }
 
 // ==========================================
@@ -583,16 +693,16 @@ function calculateSimilarity(videoKp, camKp) {
     let totalMaxWeight = 0; 
 
     const segments = [
-        { v1: 5, v2: 6, c1: 5, c2: 6, weight: 0 },     // 肩膀 
-        { v1: 11, v2: 12, c1: 11, c2: 12, weight: 0 }, // 胯部
-        { v1: 5, v2: 7, c1: 5, c2: 7, weight: 2 },   // 左大臂
-        { v1: 7, v2: 9, c1: 7, c2: 9, weight: 2 },   // 左小臂
-        { v1: 6, v2: 8, c1: 6, c2: 8, weight: 2 },   // 右大臂
-        { v1: 8, v2: 10, c1: 8, c2: 10, weight: 2 }, // 右小臂
-        { v1: 11, v2: 13, c1: 11, c2: 13, weight: 1.0 }, // 左大腿
-        { v1: 13, v2: 15, c1: 13, c2: 15, weight: 0.8 }, // 左小腿
-        { v1: 12, v2: 14, c1: 12, c2: 14, weight: 1.0 }, // 右大腿
-        { v1: 14, v2: 16, c1: 14, c2: 16, weight: 0.8 }  // 右小腿
+        { v1: 5, v2: 6, c1: 5, c2: 6, weight: 0 },     
+        { v1: 11, v2: 12, c1: 11, c2: 12, weight: 0 }, 
+        { v1: 5, v2: 7, c1: 5, c2: 7, weight: 2 },   
+        { v1: 7, v2: 9, c1: 7, c2: 9, weight: 2 },   
+        { v1: 6, v2: 8, c1: 6, c2: 8, weight: 2 },   
+        { v1: 8, v2: 10, c1: 8, c2: 10, weight: 2 }, 
+        { v1: 11, v2: 13, c1: 11, c2: 13, weight: 1.0 }, 
+        { v1: 13, v2: 15, c1: 13, c2: 15, weight: 0.8 }, 
+        { v1: 12, v2: 14, c1: 12, c2: 14, weight: 1.0 }, 
+        { v1: 14, v2: 16, c1: 14, c2: 16, weight: 0.8 }  
     ];
 
     function getAngle(p1, p2) { return Math.atan2(p2.y - p1.y, p2.x - p1.x); }
@@ -629,9 +739,9 @@ function drawSkeleton(ctx, canvas, keypoints, color) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     const adjacentKeyPoints = [
-        [5,7], [7,9], [6,8], [8,10], // 手臂
-        [11,13], [13,15], [12,14], [14,16], // 腿部
-        [5,6], [11,12], [5,11], [6,12] // 躯干框架
+        [5,7], [7,9], [6,8], [8,10], 
+        [11,13], [13,15], [12,14], [14,16], 
+        [5,6], [11,12], [5,11], [6,12] 
     ];
 
     ctx.strokeStyle = color;
