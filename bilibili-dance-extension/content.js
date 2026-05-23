@@ -39,7 +39,7 @@ function injectStyles() {
             right: 30px;
             width: 320px;
             height: 240px;
-            z-index: 99999;
+            z-index: 20000;
             border: 3px solid #fb7299;
             border-radius: 12px;
             background: #000;
@@ -54,7 +54,7 @@ function injectStyles() {
             left: 30px;
             width: 320px;
             height: 240px;
-            z-index: 99999;
+            z-index: 20000;
             border: 3px solid #00ffff;
             border-radius: 12px;
             background: #000;
@@ -74,6 +74,20 @@ function injectStyles() {
         #bili-video-canvas {
             pointer-events: none; 
             z-index: 100;
+        }
+
+        /* 提升B站原视频控制栏及各类播放设置、音量调节面板层级，避免全屏时被我们的摄像机/骨骼提取框遮挡 */
+        .bpx-player-control-wrap,
+        .bilibili-player-video-control-wrap,
+        .bpx-player-control-bottom,
+        .bpx-player-control-entity,
+        .bpx-player-ctrl-volume-box,
+        .bpx-player-ctrl-playbackrate-menu,
+        .bpx-player-ctrl-quality-menu,
+        .bpx-player-ctrl-setting-box,
+        .bpx-player-ctrl-subtitle-box,
+        .bpx-player-ctrl-aspect-box {
+            z-index: 100000 !important;
         }
 
         /* 匹配率单独放大 */
