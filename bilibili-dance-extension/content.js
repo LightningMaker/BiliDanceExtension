@@ -9,6 +9,7 @@ let lastFrameTime = 0; // 实时计分帧间隔时间戳
 
 // 🌟 核心参数设置
 const TIME_WINDOW_MS = 80;
+const REALTIME_MIN_SIMILARITY_THRESHOLD = 60; // 🎯 实时计分最低加分相似度阈值
 let videoPoseBuffer = [];
 let camPoseBuffer = [];
 
@@ -983,7 +984,9 @@ async function detectPoseLoop() {
 
             // 🎯 实时计分模式下，每帧累加分数
             if (scoringMode === 'realtime') {
-                const pointsToAdd = Math.max(0, (displayRate - 50) * 5.7) * deltaTimeSeconds;
+                const pointsToAdd = displayRate >= REALTIME_MIN_SIMILARITY_THRESHOLD
+                    ? (displayRate - REALTIME_MIN_SIMILARITY_THRESHOLD) * 5.7 * deltaTimeSeconds
+                    : 0;
                 totalScore += pointsToAdd;
                 const scoreDisplay = document.getElementById('current-score');
                 if (scoreDisplay) scoreDisplay.innerText = Math.round(totalScore);
